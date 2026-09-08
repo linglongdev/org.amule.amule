@@ -1,0 +1,59 @@
+version: "1"
+
+package:
+  id: org.amule.amule
+  name: amule
+  version: 2.3.3.1
+  kind: app
+  description: |
+    aMule is a peer-to-peer file sharing application, designed to connect
+    to the eDonkey and Kad networks, like eMule. It supports eD2k and Kad,
+    with a wide range of features including secure identification, IP
+    filter support, boolean search, slot allocation and a rich GUI (wxGTK).
+
+command:
+  - /opt/apps/org.amule.amule/files/bin/amule
+
+base: org.deepin.base/25.2.2
+
+sources:
+  - kind: git
+    url: https://github.com/amule-org/amule.git
+    commit: 6a1105634d81242a581a0f36a7e00379b12a83f3
+    name: amule
+
+build: |
+  set -e
+  cd /project/linglong/sources/amule
+
+  cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+    -DBUILD_TESTING=OFF \
+    -DENABLE_UPNP=OFF
+  cmake --build build -j"$(nproc)"
+  cmake --build build --target install
+
+  # Rename desktop files to match the linyaps app id so desktop integration works
+  mv "${PREFIX}/share/applications/org.amule.aMule.desktop" "${PREFIX}/share/applications/org.amule.amule.desktop"
+  # Point StartupWMClass at the renamed desktop file id
+  sed -i 's/StartupWMClass=org.amule.aMule/StartupWMClass=org.amule.amule/' "${PREFIX}/share/applications/org.amule.amule.desktop"
+  # Rename the icon to match the app id
+  mv "${PREFIX}/share/icons/hicolor/128x128/apps/org.amule.aMule.png" "${PREFIX}/share/icons/hicolor/128x128/apps/org.amule.amule.png"
+  sed -i 's/Icon=org.amule.aMule/Icon=org.amule.amule/' "${PREFIX}/share/applications/org.amule.amule.desktop"
+
+buildext:
+  apt:
+    build_depends:
+      - libwxgtk3.2-dev
+      - libcrypto++-dev
+      - libboost-dev
+      - libglib2.0-dev
+      - zlib1g-dev
+      - gettext
+    depends:
+      - libwxgtk3.2-1
+      - libwxbase3.2-1
+      - libcrypto++8
+      - libglib2.0-0
+      - zlib1g
